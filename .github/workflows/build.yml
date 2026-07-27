@@ -138,7 +138,7 @@ jobs:
           sudo cp /etc/pkg/FreeBSD.conf /usr/local/etc/pkg/repos/FreeBSD.conf
           sudo sed -i '' -e 's|/quarterly|/latest|' /usr/local/etc/pkg/repos/FreeBSD.conf
 
-          sudo pkg install -y bash dbus git glib meson pkgconf polkit
+          sudo pkg install -y bash dbus docbook-xsl git glib libxslt meson pkgconf polkit
 
           # FreeBSD Ports pass --prefix=$PREFIX (where PREFIX=/usr/local) to meson, so replicate the same
           # here in our test
@@ -182,9 +182,9 @@ jobs:
           export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r)/All/"
           # Automatically copy rc.d scripts from /usr/pkg/share/examples/rc.d/ to /etc/rc.d/
           export PKG_RCD_SCRIPTS=yes
-          sudo -E pkg_add -u bash dbus git glib meson pkgconf polkit
+          sudo -E pkg_add -u bash dbus docbook-xsl git glib libxslt meson pkgconf polkit
 
-          meson setup --prefix=/usr/pkg --fatal-meson-warnings --werror -Ddfuzzer-test-server=true build
+          meson setup --prefix=/usr/pkg --mandir=/usr/pkg/man --fatal-meson-warnings --werror -Ddfuzzer-test-server=true build
           ninja -C build -v
           sudo ninja -C build install
 
@@ -215,9 +215,9 @@ jobs:
           set -ex
 
           export PKG_PATH="installpath:https://cdn.openbsd.org/%m"
-          sudo -E pkg_add -U bash dbus git glib2 meson polkit
+          sudo -E pkg_add -U bash dbus docbook-xsl git glib2 libxslt meson polkit
 
-          meson setup --prefix=/usr/local --fatal-meson-warnings --werror -Ddfuzzer-test-server=true build
+          meson setup --prefix=/usr/local --mandir=/usr/local/man --fatal-meson-warnings --werror -Ddfuzzer-test-server=true build
           ninja -C build -v
           sudo ninja -C build install
 

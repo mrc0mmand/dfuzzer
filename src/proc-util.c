@@ -1,6 +1,5 @@
 /** @file proc-util.c */
 #include <errno.h>
-#include <signal.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -32,33 +31,17 @@ int df_proc_is_alive(pid_t pid)
 
         g_assert(pid > 0);
 
-        /* kill(pid, 0) is a portable liveness check - use it as the primary
-         * mechanism here as well, and fall back to kvm only when we need to
-         * check if the process is in the middle of exiting. */
-        if (kill(pid, 0) < 0) {
-                if (errno == ESRCH)
-                        return 0;
-                /* EPERM means that the process is still alive but we can't signal
-                 * it (i.e. a different UID) */
-                if (errno != EPERM)
-                        return -1;
-        }
-
-        /* Try to detect if the process is in the middle of exiting via kvm. We
-         * can't really check if the process is in the middle of a core dump as
-         * we do when procfs is available, so this is the next best thing we
-         * can do. If kvm fails for any reason, just trust the kill() result
-         * above. */
         kd = kvm_open(/* execfile= */ NULL, /* corefile= */ NULL, /* swapfile= */ NULL, KVM_NO_FILES, /* errstr= */ NULL);
         if (!kd)
-                return 1;
+                return -1;
 
         kp = kvm_getprocs(kd, KERN_PROC_PID, pid, sizeof(*kp), &cnt);
-        if (kp && cnt > 0) {
-                /* P_WEXIT indicates the process is in the middle of exiting */
-                if (kp->p_flag & P_WEXIT)
-                        return 0;
-        }
+        if (!kp || cnt == 0)
+                return 0;
+
+        /* P_WEXIT indicates the process is in the middle of exiting */
+        if (kp->p_flag & P_WEXIT)
+                return 0;
 
         return 1;
 }
@@ -98,7 +81,7 @@ int df_proc_get_name(pid_t pid, char *buf, size_t bufsz)
 
 int df_check_proc_available(void)
 {
-        /* There's no procfs since OpenBSD 5.7 and kvm/kill don't require any special filesystem */
+        /* There's no procfs since OpenBSD 5.7 and kvm doesn't require any special filesystem */
         return 0;
 }
 
